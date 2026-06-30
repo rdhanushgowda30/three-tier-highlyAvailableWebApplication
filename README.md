@@ -1,25 +1,46 @@
 # Three-Tier Highly Available Web Application on AWS
 
-## Architecture
-- **Web Tier**: Apache on EC2 (Auto Scaling + Public ALB)
-- **App Tier**: Node.js backend on EC2 (Auto Scaling + Internal ALB)
-- **DB Tier**: Amazon RDS Multi-AZ (MySQL/PostgreSQL)
+## 📖 Project Overview
+This project demonstrates how to build a **3‑tier highly available web application** on AWS using only the AWS Console.  
+It includes:
+- **Web Tier**: Apache web server running on EC2 instances behind a public Application Load Balancer (ALB).
+- **App Tier**: Node.js backend running on EC2 instances behind an internal ALB.
+- **Database Tier**: Amazon RDS (MySQL/PostgreSQL) deployed in Multi‑AZ mode for high availability.
 
-## Setup
-1. Create VPC with 2 public + 2 private subnets.
-2. Configure Internet Gateway, NAT Gateway, and Route Tables.
-3. Create Security Groups:
-   - Web SG → allow HTTP/HTTPS from internet.
-   - App SG → allow traffic only from Web SG.
-   - DB SG → allow traffic only from App SG.
-4. Create Launch Templates for Web + App tiers using provided user-data scripts.
-5. Create Auto Scaling Groups (min 2, max 4) in multiple AZs.
-6. Create ALBs:
-   - Public ALB → Web Tier.
-   - Internal ALB → App Tier.
-7. Create RDS Multi-AZ DB in private subnets.
+The architecture is designed to be **scalable, fault‑tolerant, and production‑ready**.
 
-## Testing
-- Access Public ALB DNS → Web Tier page.
-- Web Tier forwards traffic → App Tier (Node.js).
-- App Tier connects to RDS DB.
+---
+
+## 🏗️ Architecture Diagram
+**Flow:**  
+User → Public ALB → Web Tier (Apache ASG) → Internal ALB → App Tier (Node.js ASG) → RDS Multi‑AZ DB
+
+---
+
+## 🚀 Step‑by‑Step Implementation
+
+### 1. Networking (VPC Setup)
+- Created a custom VPC (`10.0.0.0/16`).
+- Added **2 public subnets** (for Web Tier) and **2 private subnets** (for App + DB Tier) across different AZs.
+- Attached an **Internet Gateway** to the VPC.
+- Configured **Route Tables**:
+  - Public subnets → route to Internet Gateway.
+  - Private subnets → route to NAT Gateway for outbound internet access.
+
+---
+
+### 2. Security Groups
+- **Web SG** → Allowed inbound HTTP/HTTPS (80/443) from anywhere.
+- **App SG** → Allowed inbound traffic only from Web SG.
+- **DB SG** → Allowed inbound traffic only from App SG on port 3306 (MySQL).
+
+---
+
+### 3. Web Tier (Presentation Layer)
+- Created a **Launch Template** with Apache installation script:
+  ```bash
+  #!/bin/bash
+  apt update -y
+  apt install -y apache2
+  systemctl start apache2
+  echo "Hello from Web Tier" > /var/www/html/index.html
